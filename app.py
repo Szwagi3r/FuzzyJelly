@@ -1,7 +1,7 @@
 import base64
 import datetime
 import io
-
+from fuzzy_set import FuzzySet
 import dash
 import dash.dash_table as dash_table
 import dash_bootstrap_components as dbc
@@ -115,8 +115,15 @@ app.layout = html.Div([
         'textAlign': 'center',
         'margin': '10px',
         'float': 'left'
-    },
-    ),
+    }),
+    html.Div(id="button",
+             children=[
+             html.Button("Compute Results",
+                         style={
+                             "diplay":"flex"
+                         })
+             ]),
+    html.Div(id = "results")
 ])
 
 
@@ -175,6 +182,25 @@ def update_output2(list_of_contents, list_of_names, list_of_dates):
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
+@app.callback(Output('results', 'children'),
+              Input('data1', 'contents'),
+              Input('data2', 'contents'))
+
+def calculate_metrics(contents1, contents2):
+
+    content_type1, content_string1 = contents1.split(',')
+    decoded1 = base64.b64decode(content_string1)
+    df1 = pd.read_csv(io.StringIO(decoded1.decode('utf-8')))
+
+
+    content_type2, content_string2 = contents2.split(',')
+    decoded2 = base64.b64decode(content_string2)
+    df2 = pd.read_csv(io.StringIO(decoded2.decode('utf-8')))
+
+    fuzzy_set1 = FuzzySet(df1)
+    fuzzy_set2 = FuzzySet(df2)
+
+    return html.Div(f"fuzzy set similarity: {fuzzy_set1.similarity(fuzzy_set2)}")
 
 if __name__ == '__main__':
     app.run_server(debug=True)
