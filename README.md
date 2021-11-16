@@ -1,2 +1,2 @@
 # FuzzyJelly
-Intuitionistic fuzzy sets and itsapplication in medical diagnosis
+Intuitionistic fuzzy sets and its application in medical diagnosis
