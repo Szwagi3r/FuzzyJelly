@@ -3,9 +3,18 @@ import pandas as pd
 
 
 class FuzzySet:
-    def __init__(self, path):
-        self.path = path
-        self.df = pd.read_csv(self.path)
+    def __init__(self, path=None, df=None):
+        if path is None and df is None:
+            raise Exception
+        if path is not None:
+            self.path = path
+            self.df = pd.read_csv(self.path)
+
+        if df is not None:
+            self.df = df
+        if path is not None and df is not None:
+            self.df = df
+
         membership = []
         non_membership = []
         for i in range(self.df.shape[1]):
@@ -24,9 +33,11 @@ class FuzzySet:
             numerator += np.dot(self.membership[i], other.membership[i])
             numerator += np.dot(self.non_membership[i], other.non_membership[i])
 
-            denominator += max(np.dot(self.membership[i], self.membership[i]), np.dot(other.membership[i], other.membership[i]))
-            denominator += max(np.dot(self.non_membership[i], self.non_membership[i]), np.dot(other.non_membership[i], other.non_membership[i]))
-        return numerator/denominator
+            denominator += max(np.dot(self.membership[i], self.membership[i]),
+                               np.dot(other.membership[i], other.membership[i]))
+            denominator += max(np.dot(self.non_membership[i], self.non_membership[i]),
+                               np.dot(other.non_membership[i], other.non_membership[i]))
+        return numerator / denominator
 
     def weighted_similarity(self, other, weights):
         assert isinstance(other, FuzzySet)
@@ -36,9 +47,11 @@ class FuzzySet:
             numerator += weights[i] * np.dot(self.membership[i], other.membership[i])
             numerator += weights[i] * np.dot(self.non_membership[i], other.non_membership[i])
 
-            denominator += max(np.dot(self.membership[i], self.membership[i]), np.dot(other.membership[i], other.membership[i]))
-            denominator += max(np.dot(self.non_membership[i], self.non_membership[i]), np.dot(other.non_membership[i], other.non_membership[i]))
-        return numerator/denominator/np.sum(weights)
+            denominator += max(np.dot(self.membership[i], self.membership[i]),
+                               np.dot(other.membership[i], other.membership[i]))
+            denominator += max(np.dot(self.non_membership[i], self.non_membership[i]),
+                               np.dot(other.non_membership[i], other.non_membership[i]))
+        return numerator / denominator / np.sum(weights)
 
 
 if __name__ == '__main__':
