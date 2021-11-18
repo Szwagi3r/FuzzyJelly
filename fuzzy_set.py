@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import pandas as pd
 
@@ -102,16 +103,44 @@ class FuzzySet:
             ids.append(P.df_compressed.index[0])
         return pd.DataFrame(result, columns=["patient", "similarity"])
 
+    def min_max_min(self, patients):
+        result = []
+        for P_id in range(patients.df_compressed.shape[0]):
+            patient_result = []
+            for D_id in range(self.df_compressed.shape[1]):
+                patient = patients.df_compressed.iloc[P_id, :]
+                disease = self.df_compressed.iloc[:, D_id]
+                membership = 0
+                non_membership = 1
+                for i in range(len(patient)):
+                    membership = max(membership, min(patient[i][0], disease[i][0]))
+                    non_membership = min(non_membership, max(patient[i][1], disease[i][1]))
+                patient_result.append([membership, non_membership])
+            result.append(patient_result)
+        result = pd.DataFrame(result)
+        result.columns = self.df_compressed.columns
+        result.index = patients.df_compressed.index
+        df = copy.deepcopy(result)
+        for i in range(df.shape[0]):
+            for j in range(df.shape[1]):
+                df.iloc[i][j] = df.iloc[i][j][0] - df.iloc[i][j][1]*(1 - df.iloc[i][j][0] - df.iloc[i][j][1])
+        return Diagnosis(patients, self.df_compressed, result, df, "Min-max-min")
+
 
 if __name__ == '__main__':
+    print("Distance diagnosis")
     A = FuzzySet("data/distance/patients.csv")
     B = FuzzySet("data/distance/diseases.csv")
     d = B.distance_diagnosis(A, dist_type="e")
     print(d.diagnosis)
     print(d.method)
-
-    M = FuzzySet("data\similarity\dengue.csv")
-    print(M.df_compressed)
-    patients_paths = ["data\similarity\P" + str(i+1) + ".csv" for i in range(15)]
-    print(patients_paths)
+    print("-------------------------------------")
+    print("Min-max-min diagnosis")
+    d = B.min_max_min(A)
+    print(d.diagnosis)
+    print(d.method)
+    print("-------------------------------------")
+    print("Similarity diagnosis")
+    M = FuzzySet(r"data\similarity\dengue.csv")
+    patients_paths = [r"data\similarity\P" + str(i+1) + ".csv" for i in range(15)]
     print(M.similarity_diagnosis(patients_paths))
