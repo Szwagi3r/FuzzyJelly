@@ -95,8 +95,8 @@ class FuzzySet:
 
 
 if __name__ == '__main__':
-    A = FuzzySet("data\patients.csv")
-    B = FuzzySet("data\diseases.csv")
+    A = FuzzySet("data/distance/patients.csv")
+    B = FuzzySet("data/distance/diseases.csv")
     d = B.distance_diagnosis(A, dist_type="e")
     print(d.diagnosis)
     print(d.method)
