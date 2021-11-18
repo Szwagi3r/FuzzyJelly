@@ -1,15 +1,15 @@
 import base64
 import datetime
 import io
-from fuzzy_set import FuzzySet
+
 import dash
 import dash.dash_table as dash_table
 import dash_bootstrap_components as dbc
-import dash_core_components as dcc
-import dash_html_components as html
 import pandas as pd
-from dash import html
+from dash import dcc, html
 from dash.dependencies import Input, Output, State
+
+from fuzzy_set import FuzzySet
 
 app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP]
@@ -34,41 +34,15 @@ def generate_table(dataframe, max_rows=10):
     ])
 
 
-df = pd.read_csv('data/set_1.csv')
-
-# fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
-
-# fig.update_layout(
-#     plot_bgcolor=colors['background'],
-#     paper_bgcolor=colors['background'],
-#     font_color=colors['background']
-# )
-
-
-# always 3 components
-# app.layout = html.Div(children=[
-#     html.H1(children='Fuzzy jelly'),
-#     html.Div(children='''
-#         Dash: A web application framework for your data.
-#     '''),
-#
-#     html.H4("Fuzzy set"),
-#     generate_table(df)
-#
-#     # dcc.Graph(
-#     #     id='example-graph',
-#     #     figure=fig)
-# ])
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
     html.H1("Intuitionistic Fuzzy Set",
-            style={
-                'textAlign': 'center'}
+            style={'textAlign': 'center'}
             ),
+
     html.Div(id='input-box-1',
              children=[
                  dcc.Upload(
@@ -85,6 +59,7 @@ app.layout = html.Div([
              ], style={
             'width': '45%',
             'height': '60px',
+            'left':'5%',
             'lineHeight': '60px',
             'borderWidth': '1px',
             'borderStyle': 'dashed',
@@ -94,38 +69,53 @@ app.layout = html.Div([
             'float': 'left'
         },
              ),
-    html.Div([
-        dcc.Upload(
-            id='upload-data2',
-            children=html.Div([
-                'Drag and Drop first fuzzy set or ',
-                html.A('Select Files')
-            ]),
-            # Allow multiple files to be uploaded
-            multiple=True
-        ),
-        html.Div(id='output-data-upload2')
-    ], style={
-        'width': '45%',
-        'height': '60px',
-        'lineHeight': '60px',
-        'borderWidth': '1px',
-        'borderStyle': 'dashed',
-        'borderRadius': '5px',
-        'textAlign': 'center',
-        'margin': '10px',
-        'float': 'left'
-    }),
-    html.Div(id="button",
+    html.Div(id='input-box-2',
              children=[
-             html.Button("Compute Results",
-                         style={
-                             "diplay":"flex"
-                         })
-             ]),
-    html.Div(id = "results")
-])
+                 dcc.Upload(
+                     id='upload-data2',
+                     children=html.Div([
+                         'Drag and Drop first fuzzy set or ',
+                         html.A('Select Files')
+                     ]),
+                     # Allow multiple files to be uploaded
+                     multiple=True
+                 ),
+                 html.Div(id='output-data-upload2')
+             ],
+             style={
+                 'width': '45%',
+                 'height': '60px',
+                 'right':'5%',
+                 'lineHeight': '60px',
+                 'borderWidth': '1px',
+                 'borderStyle': 'dashed',
+                 'borderRadius': '5px',
+                 'textAlign': 'center',
+                 'margin': '10px',
+                 'float': 'right'
+             }),
+    dcc.Store(id="results1"),
+    dcc.Store(id="results2"),
+    html.Div(id="metric",
+             style={
+                "bottom":"10%",
+                "position":"absolute",
+                 'width': '50%',
+                 'left': '25%',
+                 'height': '60px',
+                 'lineHeight': '60px',
+                 'borderWidth': '1px',
+                 'borderStyle': 'dashed',
+                 'borderRadius': '5px',
+                 'textAlign': 'center',
+                 'display': 'block',
+                 'margin-left': 'auto',
+                 'margin-right': 'auto',
+                 'float': 'center'
+             })
+],
 
+)
 
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
@@ -162,7 +152,6 @@ def parse_contents(contents, filename, date):
               Input('upload-data', 'contents'),
               State('upload-data', 'filename'),
               State('upload-data', 'last_modified'))
-
 def update_output(list_of_contents, list_of_names, list_of_dates):
     if list_of_contents is not None:
         children = [
@@ -170,11 +159,11 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
+
 @app.callback(Output('output-data-upload2', 'children'),
               Input('upload-data2', 'contents'),
               State('upload-data2', 'filename'),
               State('upload-data2', 'last_modified'))
-
 def update_output2(list_of_contents, list_of_names, list_of_dates):
     if list_of_contents is not None:
         children = [
@@ -182,25 +171,36 @@ def update_output2(list_of_contents, list_of_names, list_of_dates):
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
-@app.callback(Output('results', 'children'),
-              Input('data1', 'contents'),
-              Input('data2', 'contents'))
+@app.callback(Output('results1', 'data'),
+              Input('upload-data', 'contents'))
+def store_data1(contents1):
 
-def calculate_metrics(contents1, contents2):
-
-    content_type1, content_string1 = contents1.split(',')
+    content_type1, content_string1 = contents1[0].split(',')
     decoded1 = base64.b64decode(content_string1)
     df1 = pd.read_csv(io.StringIO(decoded1.decode('utf-8')))
+    return df1.to_json(date_format='iso', orient='split')
 
+@app.callback(Output('results2', 'data'),
+              Input('upload-data2', 'contents'))
+def store_data1(contents2):
+    content_type2, content_string2 = contents2[0].split(',')
+    decoded1 = base64.b64decode(content_string2)
+    df1 = pd.read_csv(io.StringIO(decoded1.decode('utf-8')))
+    return df1.to_json(date_format='iso', orient='split')
 
-    content_type2, content_string2 = contents2.split(',')
-    decoded2 = base64.b64decode(content_string2)
-    df2 = pd.read_csv(io.StringIO(decoded2.decode('utf-8')))
+@app.callback(Output('metric', 'children'),
+              Input('results1', 'data'),
+              Input('results2', 'data'))
+def calculate_metrics(contents1, contents2):
+    print("Jestem")
+    df1 = pd.read_json(contents1, orient='split')
+    df2 = pd.read_json(contents2, orient='split')
 
-    fuzzy_set1 = FuzzySet(df1)
-    fuzzy_set2 = FuzzySet(df2)
+    fuzzy_set1 = FuzzySet(df=df1)
+    fuzzy_set2 = FuzzySet(df=df2)
 
     return html.Div(f"fuzzy set similarity: {fuzzy_set1.similarity(fuzzy_set2)}")
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
