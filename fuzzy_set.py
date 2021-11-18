@@ -93,6 +93,15 @@ class FuzzySet:
             diagnosis.append([df_distances.index[P_id], df_distances.columns[np.argmin(df_distances.iloc[P_id, :])]])
         return Diagnosis(patients.df_compressed, self.df_compressed, df_distances, pd.DataFrame(diagnosis, columns=["patient", "disease"]), method=dist_type+" distance")
 
+    def similarity_diagnosis(self, patients_paths):
+        result = []
+        ids = []
+        for path in patients_paths:
+            P = FuzzySet(path)
+            result.append([P.df_compressed.index[0], self.similarity(P)])
+            ids.append(P.df_compressed.index[0])
+        return pd.DataFrame(result, columns=["patient", "similarity"])
+
 
 if __name__ == '__main__':
     A = FuzzySet("data/distance/patients.csv")
@@ -101,9 +110,8 @@ if __name__ == '__main__':
     print(d.diagnosis)
     print(d.method)
 
-    #M = FuzzySet("data\disease_1_M.csv", False)
-    #print(M.df_compressed)
-    #P1 = FuzzySet("data\disease_1_P1.csv")
-    #print(P1.membership)
-    #print(P1.non_membership)
-    #print(P1.similarity(M))
+    M = FuzzySet("data\similarity\dengue.csv")
+    print(M.df_compressed)
+    patients_paths = ["data\similarity\P" + str(i+1) + ".csv" for i in range(15)]
+    print(patients_paths)
+    print(M.similarity_diagnosis(patients_paths))
