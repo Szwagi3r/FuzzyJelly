@@ -149,6 +149,7 @@ def parse_contents(contents, filename, date):
         return html.Div([
             'There was an error processing this file.'
         ])
+    df = FuzzySet(df=df).df_compressed.astype(str)
     df = df.reset_index()
     return html.Div([
         html.H5(filename),

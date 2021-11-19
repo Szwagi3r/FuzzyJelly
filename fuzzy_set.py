@@ -140,6 +140,8 @@ class FuzzySet:
 if __name__ == '__main__':
     print("Distance diagnosis")
     A = FuzzySet("data/distance/patients.csv")
+    print(A.df_compressed.astype(str))
+    print(type(A.df_compressed))
     B = FuzzySet("data/distance/diseases.csv")
     d = B.distance_diagnosis(A, dist_type="e")
     print(d.diagnosis)
