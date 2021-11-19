@@ -13,12 +13,22 @@ class Diagnosis:
 
 
 class FuzzySet:
-    def __init__(self, path, rownames=True):
-        self.path = path
-        if rownames:
-            self.df = pd.read_csv(self.path, index_col=0)
-        else:
-            self.df = pd.read_csv(self.path)
+    def __init__(self, path=None, df=None, rownames=True):
+
+        if path is None and df is None:
+            raise Exception
+        if path is not None:
+            self.path = path
+            if rownames:
+                self.df = pd.read_csv(self.path, index_col=0)
+            else:
+                self.df = pd.read_csv(self.path)
+        if df is not None:
+            self.df = df
+        if path is not None and df is not None:
+            self.df = df
+
+
         membership = []
         non_membership = []
         for i in range(self.df.shape[1]):
@@ -141,6 +151,6 @@ if __name__ == '__main__':
     print(d.method)
     print("-------------------------------------")
     print("Similarity diagnosis")
-    M = FuzzySet(r"data\similarity\dengue.csv")
-    patients_paths = [r"data\similarity\P" + str(i+1) + ".csv" for i in range(15)]
+    M = FuzzySet(r"data/similarity/dengue.csv")
+    patients_paths = [r"data/similarity/P" + str(i+1) + ".csv" for i in range(15)]
     print(M.similarity_diagnosis(patients_paths))

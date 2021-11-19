@@ -39,7 +39,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
-    html.H1("Intuitionistic Fuzzy Set Similarity Calculation",
+    html.H1("Distance based diagnostics",
             style={'textAlign': 'center'}
             ),
 
@@ -48,7 +48,7 @@ app.layout = html.Div([
                  dcc.Upload(
                      id='upload-data',
                      children=html.Div([
-                         'Drag and Drop first fuzzy set or ',
+                         'Choose Patients Dataset or ',
                          html.A('Select Files')
                      ]),
                      # Allow multiple files to be uploaded
@@ -59,13 +59,13 @@ app.layout = html.Div([
              ], style={
             'width': '45%',
             'height': '60px',
-            'left':'5%',
+            'left': '7%',
             'lineHeight': '60px',
             'borderWidth': '1px',
             'borderStyle': 'dashed',
             'borderRadius': '5px',
             'textAlign': 'center',
-            'margin': '10px',
+            'marginLeft': '4%',
             'float': 'left'
         },
              ),
@@ -74,7 +74,7 @@ app.layout = html.Div([
                  dcc.Upload(
                      id='upload-data2',
                      children=html.Div([
-                         'Drag and Drop first fuzzy set or ',
+                         'Choose Diseases Dataset or ',
                          html.A('Select Files')
                      ]),
                      # Allow multiple files to be uploaded
@@ -85,28 +85,43 @@ app.layout = html.Div([
              style={
                  'width': '45%',
                  'height': '60px',
-                 'right':'5%',
                  'lineHeight': '60px',
                  'borderWidth': '1px',
                  'borderStyle': 'dashed',
                  'borderRadius': '5px',
                  'textAlign': 'center',
-                 'margin': '10px',
-                 'float': 'right'
+                 'marginRight':'4%',
+                 'float':'right'
              }),
     dcc.Store(id="results1"),
     dcc.Store(id="results2"),
+    dcc.Store(id="e"),
+    dcc.Store(id="m"),
+    dcc.Store(id="s"),
+
+    html.Div(dcc.RadioItems(id='input-radio-button',
+                            options=[{'label': 'Euclidean', 'value': 'Euclidean'},
+                                     {'label': 'Min-Max-Min', 'value': 'Min-Max-Min'}],
+                            value='Euclidean',
+                            labelStyle={'display': 'inline-block'}
+                            ),
+             style={
+                 "bottom": "45%",
+                 "left": "45%",
+                 "position": "absolute",
+                 'textAlign': 'center',
+                 'margin-left': 'auto',
+                 'margin-right': 'auto',
+                 'float': 'center'
+             }, ),
     html.Div(id="metric",
              style={
-                "bottom":"10%",
-                "position":"absolute",
+                 "bottom": "30%",
+                 "position": "absolute",
                  'width': '50%',
                  'left': '25%',
                  'height': '60px',
                  'lineHeight': '60px',
-                 'borderWidth': '1px',
-                 'borderStyle': 'dashed',
-                 'borderRadius': '5px',
                  'textAlign': 'center',
                  'display': 'block',
                  'margin-left': 'auto',
@@ -116,6 +131,7 @@ app.layout = html.Div([
 ],
 
 )
+
 
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
@@ -133,14 +149,15 @@ def parse_contents(contents, filename, date):
         return html.Div([
             'There was an error processing this file.'
         ])
-
+    df = df.reset_index()
     return html.Div([
         html.H5(filename),
         html.H6(datetime.datetime.fromtimestamp(date)),
 
         dash_table.DataTable(
             data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns]
+            columns=[{'name': i, 'id': i} for i in df.columns],
+
         ),
 
         html.Hr(),  # horizontal line
@@ -171,14 +188,15 @@ def update_output2(list_of_contents, list_of_names, list_of_dates):
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
+
 @app.callback(Output('results1', 'data'),
               Input('upload-data', 'contents'))
 def store_data1(contents1):
-
     content_type1, content_string1 = contents1[0].split(',')
     decoded1 = base64.b64decode(content_string1)
     df1 = pd.read_csv(io.StringIO(decoded1.decode('utf-8')))
     return df1.to_json(date_format='iso', orient='split')
+
 
 @app.callback(Output('results2', 'data'),
               Input('upload-data2', 'contents'))
@@ -188,18 +206,66 @@ def store_data1(contents2):
     df1 = pd.read_csv(io.StringIO(decoded1.decode('utf-8')))
     return df1.to_json(date_format='iso', orient='split')
 
-@app.callback(Output('metric', 'children'),
+
+@app.callback(Output('e', 'data'),
               Input('results1', 'data'),
-              Input('results2', 'data'))
+              Input('results2', 'data'), )
 def calculate_metrics(contents1, contents2):
+    print("Jestem")
+
     df1 = pd.read_json(contents1, orient='split')
     df2 = pd.read_json(contents2, orient='split')
 
     fuzzy_set1 = FuzzySet(df=df1)
     fuzzy_set2 = FuzzySet(df=df2)
 
-    return html.Div(f"fuzzy set similarity: {fuzzy_set1.similarity(fuzzy_set2)}")
+    d = fuzzy_set2.distance_diagnosis(fuzzy_set1, dist_type="e")
+
+    return d.diagnosis.to_json(date_format='iso', orient='split')
+
+
+@app.callback(Output('m', 'data'),
+              Input('results1', 'data'),
+              Input('results2', 'data'), )
+def calculate_metrics(contents1, contents2):
+    print("Jestem")
+
+    df1 = pd.read_json(contents1, orient='split')
+    df2 = pd.read_json(contents2, orient='split')
+
+    fuzzy_set1 = FuzzySet(df=df1)
+    fuzzy_set2 = FuzzySet(df=df2)
+
+    d = fuzzy_set2.min_max_min(fuzzy_set1)
+
+    return d.diagnosis.to_json(date_format='iso', orient='split')
+
+
+@app.callback(Output("metric", "children"),
+              Input('m', 'data'),
+              Input('e', 'data'),
+              Input('input-radio-button', 'value'))
+def generate_result_table(m, e, radio):
+    df1 = pd.read_json(e, orient='split')
+    df2 = pd.read_json(m, orient='split').reset_index().round(2)
+
+    if radio == "Euclidean":
+
+        return dash_table.DataTable(
+            data=df1.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df1.columns],
+
+
+        )
+    elif radio == "Min-Max-Min":
+        return dash_table.DataTable(
+            data=df2.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df2.columns],
+
+        )
+    else:
+        return html.Div("NO METRIC FOUND")
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8051)
+    app.run_server(debug=True)
