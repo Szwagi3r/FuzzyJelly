@@ -78,12 +78,12 @@ class FuzzySet:
             result = 0
             if dist_type == "euclidean":
                 for i in range(len(patient)):
-                    result += (disease[i][0] - patient[i][0])**2+(disease[i][1] - patient[i][1])**2+(disease[i][0] - patient[i][0] + disease[i][1] - patient[i][1])**2
+                    result += (disease[i][0] - patient[i][0])**2+(disease[i][1] - patient[i][1])**2 + (disease[i][0] - patient[i][0] + disease[i][1] - patient[i][1])**2
                 return np.sqrt(result)
             if dist_type == "absolute":
                 for i in range(len(patient)):
-                    result += (disease[i][0] - patient[i][0])**2+(disease[i][1] - patient[i][1])**2+(disease[i][0] - patient[i][0] + disease[i][1] - patient[i][1])**2
-                return np.sqrt(result)
+                    result += np.abs(disease[i][0] - patient[i][0]) + np.abs(disease[i][1] - patient[i][1]) + np.abs(disease[i][0] - patient[i][0] + disease[i][1] - patient[i][1])
+                return result
 
         if dist_type not in ["euclidean", "absolute"]:
             print("Wrong distance type, using euclidean instead.")
@@ -142,10 +142,16 @@ if __name__ == '__main__':
     A = FuzzySet("data/distance/patients.csv")
     print(A.df_compressed.astype(str))
     print(type(A.df_compressed))
+    print("-------------------------------------")
+    print("Euclidean")
     B = FuzzySet("data/distance/diseases.csv")
-    d = B.distance_diagnosis(A, dist_type="e")
+    d = B.distance_diagnosis(A, dist_type="euclidean")
     print(d.diagnosis)
     print(d.method)
+    print("-------------------------------------")
+    print("Absolute")
+    d = B.distance_diagnosis(A, dist_type="absolute")
+    print(d.results_table)
     print("-------------------------------------")
     print("Min-max-min diagnosis")
     d = B.min_max_min(A)

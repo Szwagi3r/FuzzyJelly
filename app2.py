@@ -97,11 +97,15 @@ app.layout = html.Div([
     dcc.Store(id="results2"),
     dcc.Store(id="e"),
     dcc.Store(id="m"),
+    dcc.Store(id="a"),
     dcc.Store(id="s"),
 
     html.Div(dcc.RadioItems(id='input-radio-button',
                             options=[{'label': 'Euclidean', 'value': 'Euclidean'},
-                                     {'label': 'Min-Max-Min', 'value': 'Min-Max-Min'}],
+                                     {'label': 'Min-Max-Min', 'value': 'Min-Max-Min'},
+                                     {'label': 'Absolute', 'value': 'Absolute'},
+
+                                     ],
                             value='Euclidean',
                             labelStyle={'display': 'inline-block'}
                             ),
@@ -212,7 +216,6 @@ def store_data1(contents2):
               Input('results1', 'data'),
               Input('results2', 'data'), )
 def calculate_metrics(contents1, contents2):
-    print("Jestem")
 
     df1 = pd.read_json(contents1, orient='split')
     df2 = pd.read_json(contents2, orient='split')
@@ -220,7 +223,7 @@ def calculate_metrics(contents1, contents2):
     fuzzy_set1 = FuzzySet(df=df1)
     fuzzy_set2 = FuzzySet(df=df2)
 
-    d = fuzzy_set2.distance_diagnosis(fuzzy_set1, dist_type="e")
+    d = fuzzy_set2.distance_diagnosis(fuzzy_set1, dist_type="euclidean")
 
     return d.diagnosis.to_json(date_format='iso', orient='split')
 
@@ -229,7 +232,6 @@ def calculate_metrics(contents1, contents2):
               Input('results1', 'data'),
               Input('results2', 'data'), )
 def calculate_metrics(contents1, contents2):
-    print("Jestem")
 
     df1 = pd.read_json(contents1, orient='split')
     df2 = pd.read_json(contents2, orient='split')
@@ -241,14 +243,30 @@ def calculate_metrics(contents1, contents2):
 
     return d.diagnosis.to_json(date_format='iso', orient='split')
 
+@app.callback(Output('a', 'data'),
+              Input('results1', 'data'),
+              Input('results2', 'data'), )
+def calculate_metrics(contents1, contents2):
+
+    df1 = pd.read_json(contents1, orient='split')
+    df2 = pd.read_json(contents2, orient='split')
+
+    fuzzy_set1 = FuzzySet(df=df1)
+    fuzzy_set2 = FuzzySet(df=df2)
+
+    d = fuzzy_set2.distance_diagnosis(fuzzy_set1, dist_type="absolute")
+
+    return d.diagnosis.to_json(date_format='iso', orient='split')
 
 @app.callback(Output("metric", "children"),
               Input('m', 'data'),
               Input('e', 'data'),
+              Input('a', 'data'),
               Input('input-radio-button', 'value'))
-def generate_result_table(m, e, radio):
+def generate_result_table(m, e, a, radio):
     df1 = pd.read_json(e, orient='split')
     df2 = pd.read_json(m, orient='split').reset_index().round(2)
+    df3 = pd.read_json(a, orient='split')
 
     if radio == "Euclidean":
 
@@ -264,6 +282,13 @@ def generate_result_table(m, e, radio):
             columns=[{'name': i, 'id': i} for i in df2.columns],
 
         )
+    elif radio == "Absolute":
+        return dash_table.DataTable(
+            data=df3.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df3.columns],
+
+        )
+
     else:
         return html.Div("NO METRIC FOUND")
 
